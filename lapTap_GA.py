@@ -1,52 +1,16 @@
 import random
 import pandas as pd
-# 부품별 가격 범위 설정
-cpu_prices = {generation: 100 * generation for generation in range(1, 11)}  # 1세대부터 10세대까지 
-ram_prices = {size: 10 * size for size in [4, 8, 16, 32, 64]}  # 4GB부터 64GB까지 
-storage_prices = {size: 0.5 * size for size in [128, 256, 512, 1024, 2048]}  # 128GB부터 2TB까지 
-gpu_prices = {size: 20 * size for size in [2, 4, 8, 16]}  # 2GB부터 16GB까지 
-
-
-
-print(f'cpu_prices = {cpu_prices}')
-print(f'ram_prices = {ram_prices}')
-print(f'storage_prices = {storage_prices}')
-print(f'gpu_prices = {gpu_prices}')
-
-# 데이터셋 생성 함수 ----> 필요없음
-def generate_dataset(n):
-    dataset = []
-    for _ in range(n):
-        cpu_gen = random.randint(1, 10)
-        ram_size = random.choice([4, 8, 16, 32, 64])
-        storage_size = random.choice([128, 256, 512, 1024, 2048])
-        gpu_size = random.choice([2, 4, 8, 16])
-
-        price = cpu_prices[cpu_gen] + ram_prices[ram_size] + storage_prices[storage_size] + gpu_prices[gpu_size]
-
-        dataset.append({
-            "cpu": cpu_gen,
-            "ram": ram_size,
-            "storage": storage_size,
-            "gpu": gpu_size,
-            "price": price
-        })
-    return dataset
-# 예제 데이터셋 생성 -- 초기 개체군 
-#dataset = generate_dataset(100)
-#print(dataset[:5])  # 처음 5개의 데이터를 출력
 
 
 '''적응도 함수'''
 def fitness(individual, target):
     # 개체의 가격을 계산
-    price = sum(individual)
+    price = int(CPU[individual[0]][3]) + int(GPU[individual[1]][3]) + int(MB[individual[2]][2]) + int(PO[individual[3]][3]) + int(RAM[individual[4]][3]) + int(SSD[individual[5]][6])
     # 예산과의 차이를 계산
     difference = abs(target - price)
     # 차이가 0에 가까울수록 적응도가 높아야 하므로, 차이의 역수를 반환
     # 차이가 0일 경우를 대비해 1을 더해 분모가 0이 되는 것을 방지
     return 1 / (difference + 1)
-
 ##-----> 
 
 
@@ -78,6 +42,50 @@ def mutate(individual):
     index = random.randint(0, len(individual) - 1)
     mutation = random.choice(items[index])
     individual[index] = mutation
+
+
+
+# 부품별 가격 범위 설정
+df_CPU = pd.read_csv("./data/CPU_LIST.csv", decimal=',')
+df_GPU = pd.read_csv("./data/GPU_LIST.csv", decimal=',')
+df_MB = pd.read_csv("./data/MAINBOARD_LIST.csv", decimal=',')
+df_PO = pd.read_csv("./data/POWER_LIST.csv", decimal=',')
+df_RAM = pd.read_csv("./data/RAM_CSV.csv", decimal=',')
+df_SSD = pd.read_csv("./data/SSD_LIST.csv", decimal=',')
+
+
+# 순위, 모델명, 점수, 가격
+CPU = df_CPU.values
+# 순위, 모델명, 점수, 가격
+GPU = df_GPU.values
+# 순위, 모델명, 가격
+MB = df_MB.values
+# 등급, 모델명, 와트, 가격
+PO = df_PO.values
+# 순위, 모델명, 성능, 가격
+RAM = df_RAM.values
+# 순위, 모델명, 유저 점수, 가성비, 벤치점수, 성능, 가격
+SSD = df_SSD.values
+
+
+cpu_list = { i for i in range(len(CPU))}  
+gpu_list = { i for i in range(len(GPU))}  
+mb_list = { i for i in range(len(MB))}  
+po_list = { i for i in range(len(PO))}  
+ram_list = { i for i in range(len(RAM))}  
+ssd_list = { i for i in range(len(SSD))}
+
+
+# 부품별 mapping을 위해 index로 조합
+items = [
+    list(cpu_list),
+    list(gpu_list),
+    list(mb_list),
+    list(po_list),
+    list(ram_list),
+    list(ssd_list)    
+]
+
 
 # 유전 알고리즘 실행
 def run_ga(items, target_price, population_size=100, generations=50):
@@ -111,13 +119,6 @@ def run_ga(items, target_price, population_size=100, generations=50):
     return best_individual, best_fitness
 
 
-# 부품별 가격 범위 설정
-items = [
-    list(cpu_prices.values()),  # CPU 가격
-    list(ram_prices.values()),  # RAM 가격
-    list(storage_prices.values()),  # 스토리지 가격
-    list(gpu_prices.values())  # GPU 가격
-]
 
 
 # 사용자로부터 목표 가격 입력 받기
