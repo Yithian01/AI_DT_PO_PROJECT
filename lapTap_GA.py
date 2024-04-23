@@ -18,24 +18,28 @@ def cpuFitness(cpuIndex):
     difference = abs(CPU_SCORE - score)
 
     return 1 / (difference + 1)
+
 '''GPU성능 함수'''
 def gpuFitness(gpuIndex):
     score = GPU[gpuIndex][2]
     difference = abs(GPU_SCORE - score)
 
     return 1 / (difference + 1)
+
 '''MB성능 함수'''
 def mbFitness(mbIndex):
     score = GPU[mbIndex][2]
     difference = abs(MB_SCORE - score)
 
     return 1 / (difference + 1)
+
 '''RAM성능 함수'''
 def ramFitness(ramIndex):
     score = GPU[ramIndex][2]
     difference = abs(RAM_SCORE - score)
 
     return 1 / (difference + 1)
+
 '''PO성능 함수'''
 def poFitness(poIndex):
     score = PO[poIndex][0]
@@ -58,12 +62,13 @@ def ssdFitness(ssdIndex):
     return (diffUS + diffCE +  diffBS + diffSO)
 
 
+
 '''적응도 함수'''
 def fitness(individual, target):
     # 개체의 가격을 계산
     price = int(CPU[individual[0]][3]) + int(GPU[individual[1]][3]) + int(MB[individual[2]][2]) + int(PO[individual[3]][3]) + int(RAM[individual[4]][3]) + int(SSD[individual[5]][6])
     # 예산과의 차이를 계산
-    difference = 1 / ( abs(target - price) + 1 )
+    difference = ( 1 / ( abs(target - price) + 1 ) * WE['price'] )
     # 차이가 0에 가까울수록 적응도가 높아야 하므로, 차이의 역수를 반환
     # 차이가 0일 경우를 대비해 1을 더해 분모가 0이 되는 것을 방지
 
@@ -237,7 +242,7 @@ target_price = int(input("목표 가격을 입력하세요: ( 원)"))
 
 
 # 유전 알고리즘 실행하여 최적의 구성 찾기
-best_configuration, best_fitness = run_ga(items, target_price, population_size=100, generations=50)
+best_configuration, best_fitness = run_ga( items, target_price, population_size=100, generations=50 )
 
 
 # 결과 출력
@@ -274,5 +279,5 @@ def printResult(result):
     elif diff < 0 :
         print(f'{-diff}(원) 더 필요합니다.')
     else:
-        print(f'{diff}(원) 아꼈습니다.')
+        print(f' + {diff}(원) 아꼈습니다.')
 printResult(best_configuration)
