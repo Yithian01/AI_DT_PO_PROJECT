@@ -14,7 +14,7 @@ WE = { 'price': 0.8, 'cpu': 0.4, 'gpu': 0.3, 'mb': 0.3, 'po': 0.34, 'ram': 0.3, 
 
 '''CPU성능 함수'''
 def cpuFitness(cpuIndex):
-    score = CPU[cpuIndex][2]
+    score = CPU[cpuIndex][1]
     difference = abs(CPU_SCORE - score)
 
     return 1 / (difference + 1)
@@ -66,7 +66,7 @@ def ssdFitness(ssdIndex):
 '''적응도 함수'''
 def fitness(individual, target):
     # 개체의 가격을 계산
-    price = int(CPU[individual[0]][3]) + int(GPU[individual[1]][3]) + int(MB[individual[2]][2]) + int(PO[individual[3]][3]) + int(RAM[individual[4]][3]) + int(SSD[individual[5]][6])
+    price = int(CPU[individual[0]][2]) + int(GPU[individual[1]][3]) + int(MB[individual[2]][2]) + int(PO[individual[3]][3]) + int(RAM[individual[4]][3]) + int(SSD[individual[5]][6])
     # 예산과의 차이를 계산
     difference = ( 1 / ( abs(target - price) + 1 ) * WE['price'] )
     # 차이가 0에 가까울수록 적응도가 높아야 하므로, 차이의 역수를 반환
@@ -93,10 +93,10 @@ def fitness(individual, target):
 def create_individual(items):
     while True:
         individual = [random.choice(item) for item in items]
-        if CPU[individual[0]][4] >= 13 and MB[individual[2]][3] >= 600:
+        if CPU[individual[0]][3] >= 13 and MB[individual[2]][3] >= 600:
             break
         
-        if CPU[individual[0]][4] <= 12 and MB[individual[2]][3] < 600:
+        if CPU[individual[0]][3] <= 12 and MB[individual[2]][3] < 600:
             break
 
     return individual
@@ -136,12 +136,11 @@ df_SSD = pd.read_csv("./data/SSD_LIST.csv", decimal=',')
 
 
 
-# 순위, 모델명, 점수, 가격
+#모델명, 점수, 가격, 버전 ## 수정_완료 
 CPU = df_CPU.values
 for i in CPU:
-    i[0] = int(i[0])
+    i[1] = int(i[1])
     i[2] = int(i[2])
-    i[3] = int(i[3])
 
 # 순위, 모델명, 점수, 가격
 GPU = df_GPU.values
@@ -238,7 +237,7 @@ def run_ga(items, target_price, population_size=100, generations=50):
 
 
 # 사용자로부터 목표 가격 입력 받기
-target_price = int(input("목표 가격을 입력하세요: ( 원)"))
+target_price = int(input("목표 가격을 입력하세요: (원)"))
 
 
 # 유전 알고리즘 실행하여 최적의 구성 찾기
