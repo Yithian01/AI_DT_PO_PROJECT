@@ -1,3 +1,4 @@
+import numpy as np
 import random
 import pandas as pd
 CPU_SCORE = 9654
@@ -5,47 +6,19 @@ GPU_SCORE = 38945
 MB_SCORE = 1
 RAM_SCORE = 30232
 PO_SCORE = 1
+
+#SSD_MAX_SOCRE
 maxUS = 68.0
 maxCE = 147.0
 maxBS = 432.0
 maxSO = 3054.0
-WE = { 'price': 0.8, 'cpu': 0.4, 'gpu': 0.3, 'mb': 0.3, 'po': 0.34, 'ram': 0.3, 'ssd': 0.4}
+WE = { 'price': 1, 'cpu': 1, 'gpu': 1, 'mb': 1, 'po': 1, 'ram': 1, 'ssd': 1}
 
 
-'''CPU성능 함수'''
-def cpuFitness(cpuIndex):
-    score = CPU[cpuIndex][1]
-    difference = abs(CPU_SCORE - score)
+# 각 가중치 스케일링
+def min_max_scaling(value, min_val, max_val):
+    return (value - min_val) / (max_val - min_val)
 
-    return 1 / (difference + 1)
-
-'''GPU성능 함수'''
-def gpuFitness(gpuIndex):
-    score = GPU[gpuIndex][2]
-    difference = abs(GPU_SCORE - score)
-
-    return 1 / (difference + 1)
-
-'''MB성능 함수'''
-def mbFitness(mbIndex):
-    score = GPU[mbIndex][2]
-    difference = abs(MB_SCORE - score)
-
-    return 1 / (difference + 1)
-
-'''RAM성능 함수'''
-def ramFitness(ramIndex):
-    score = GPU[ramIndex][2]
-    difference = abs(RAM_SCORE - score)
-
-    return 1 / (difference + 1)
-
-'''PO성능 함수'''
-def poFitness(poIndex):
-    score = PO[poIndex][0]
-
-    difference = abs(PO_SCORE - score)
-    return 1 / (difference + 1)
 
 '''SSD성능 함수'''
 def ssdFitness(ssdIndex):
@@ -53,14 +26,12 @@ def ssdFitness(ssdIndex):
     thisCE = SSD[ssdIndex][3]
     thisBS = SSD[ssdIndex][4]
     thisSO = SSD[ssdIndex][5]
+
+    max_SCORE = maxUS + maxCE + maxBS + maxSO
+    cur_SCORE = thisUS + thisCE + thisBS + thisSO
+    diff_ALL = 1 / (abs( max_SCORE - cur_SCORE) + 1)
     
-    diffUS = 1 / ( abs(maxUS - thisUS) + 1)
-    diffCE = 1 / (abs(maxCE - thisCE) + 1 )
-    diffBS = 1 / ( abs(maxBS - thisBS) + 1 )
-    diffSO = 1 / ( abs(maxSO - thisSO) + 1 )
-
-    return (diffUS + diffCE +  diffBS + diffSO)
-
+    return diff_ALL
 
 
 '''적응도 함수'''
@@ -68,35 +39,58 @@ def fitness(individual, target):
     # 개체의 가격을 계산
     price = int(CPU[individual[0]][2]) + int(GPU[individual[1]][3]) + int(MB[individual[2]][2]) + int(PO[individual[3]][3]) + int(RAM[individual[4]][3]) + int(SSD[individual[5]][6])
     # 예산과의 차이를 계산
-    difference = ( 1 / ( abs(target - price) + 1 ) * WE['price'] )
+    priceFit = ( 1 / ( abs(target - price) + 1 ) * WE['price'] )
     # 차이가 0에 가까울수록 적응도가 높아야 하므로, 차이의 역수를 반환
     # 차이가 0일 경우를 대비해 1을 더해 분모가 0이 되는 것을 방지
 
     #cpu, gpu, mb, po, ram, ssd
-    cpuFit = ( cpuFitness(individual[0]) * WE['cpu'] )
-    gpuFit = ( gpuFitness(individual[1]) * WE['gpu']) 
-    mbFit = ( mbFitness(individual[2]) * WE['mb'] )
-    poFit = ( poFitness(individual[3]) * WE['po'] ) 
-    ramFit = ( ramFitness(individual[4]) * WE['ram'] )
+    cpuFit = ( 1 / (abs( CPU_SCORE - CPU[individual[0]][1]) +1) * WE['cpu'] )
+    gpuFit = ( 1 / (abs( GPU_SCORE - GPU[individual[1]][2]) +1) * WE['gpu'] )
+    mbFit = ( 1 / (abs( MB_SCORE - MB[individual[2]][0]) + 1) * WE['mb'] )
+    poFit = ( 1 / (abs( PO_SCORE - PO[individual[3]][0]) + 1) * WE['po'] )
+    ramFit = ( 1 / (abs( RAM_SCORE - RAM[individual[4]][2]) + 1) * WE['ram'] )
     ssdFit = ( ssdFitness(individual[5]) * WE['ssd'] ) 
 
-#    print(f' cpuFit = {cpuFit}, gpuFit ={gpuFit}, mbFit = {mbFit}, poFit ={poFit}, ramFit ={ramFit}, ssdFit ={ssdFit} ')
-    print(f' FIT = {( difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) }' )
-    print(f' GPU_FIT = {( gpuFit ) }' )
-    print(f' PRICE_FIT = {( difference ) }' )
-    return ( difference ) 
+    DIFF_ALL = [priceFit, cpuFit, gpuFit, mbFit, poFit, ramFit, ssdFit]
+    mean_DIFF = np.mean(DIFF_ALL)
+    std_DIFF = (sum([(score - mean_DIFF) ** 2 for score in DIFF_ALL]) / len(DIFF_ALL)) ** 0.5
+
+    standardozed_DIFF = [abs(i - mean_DIFF) / (std_DIFF + 1e-5) for i in DIFF_ALL]
+
+    print(f'standardozed_DIFF = {standardozed_DIFF}')
+
+    #print(f'price = {priceFit} cpuFit = {cpuFit}, gpuFit ={gpuFit}, mbFit = {mbFit}, poFit ={poFit}, ramFit ={ramFit}, ssdFit ={ssdFit} ')
+    #(difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) 
+    #print(f' FIT = {( difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) }')
+
+
+    return sum(standardozed_DIFF) # 모든 비용함수
+    #return priceFit # 가격만 비교
 ##-----> 
 
+
+def cpuToMotherBoard( individual ):
+    if CPU[individual[0]][0][0] == 'A' and MB[individual[2]][3] % 100 in [10, 60, 90]:
+        return False
+   
+    if CPU[individual[0]][0][0] == 'I' and MB[individual[2]][3] % 100 in [20, 50, 70]:
+        return False
+       
+    if CPU[individual[0]][3] >= 13 and MB[individual[2]][3] < 600:
+        return False
+        
+    if CPU[individual[0]][3] <= 12 and MB[individual[2]][3] >= 600:
+        return False
+
+    return True
 
 '''GA_추가_기능'''
 # 개체 생성 함수
 def create_individual(items):
     while True:
         individual = [random.choice(item) for item in items]
-        if CPU[individual[0]][3] >= 13 and MB[individual[2]][3] >= 600:
-            break
         
-        if CPU[individual[0]][3] <= 12 and MB[individual[2]][3] < 600:
+        if cpuToMotherBoard(individual):
             break
 
     return individual
@@ -119,12 +113,19 @@ def crossover(parent1, parent2):
     index = random.randint(1, len(parent1) - 2)
     return parent1[:index] + parent2[index:], parent2[:index] + parent1[index:]
 
+
 # 변이
 def mutate(individual):
-    index = random.randint(0, len(individual) - 1)
-    mutation = random.choice(items[index])
-    individual[index] = mutation
+    while True:
 
+        index = random.randint(0, len(individual) - 1)
+        mutation = random.choice(items[index])
+        individual[index] = mutation
+
+        if cpuToMotherBoard(individual):
+            break
+
+    
 
 # 부품별 가격 범위 설정
 df_CPU = pd.read_csv("./data/CPU_LIST.csv", decimal=',')
@@ -209,15 +210,14 @@ def run_ga(items, target_price, population_size=100, generations=50):
 
     for generation in range(generations):
         fitnesses = evaluate_population(population, target_price)
-    
-
+        
         ##if generation == 0 :
         ##    for i in range(len(fitnesses)):
         ##        print(f'{i}번째 fitness = {fitnesses[i]}')
         
 
         new_population = []
-        for i in range(population_size // 2):
+        for _ in range(population_size // 2):
             parent1 = select(population, fitnesses)
             parent2 = select(population, fitnesses)
             child1, child2 = crossover(parent1, parent2)
@@ -270,6 +270,8 @@ def printResult(result):
     ans += df_PO["MONEY"][result[3]]    
     ans += df_RAM["MONEY"][result[4]]
     ans += df_SSD["MONEY"][result[5]]
+
+    
     print(f'총 금액 => {ans} (원) 입니다.!')
     print(f'원하는 금액 => {target_price} (원) 입니다.!')
     diff = target_price - ans 
