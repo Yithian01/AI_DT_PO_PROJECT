@@ -57,7 +57,7 @@ def fitness(individual, target):
 
     standardozed_DIFF = [abs(i - mean_DIFF) / (std_DIFF + 1e-5) for i in DIFF_ALL]
 
-    print(f'standardozed_DIFF = {standardozed_DIFF}')
+    #print(f'standardozed_DIFF = {standardozed_DIFF}')
 
     #print(f'price = {priceFit} cpuFit = {cpuFit}, gpuFit ={gpuFit}, mbFit = {mbFit}, poFit ={poFit}, ramFit ={ramFit}, ssdFit ={ssdFit} ')
     #(difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) 
@@ -251,6 +251,7 @@ print(f"가장 적합한 구성의 가격: {sum(best_configuration)}")
 
 
 def printResult(result):
+
 
     #cpu, gpu, mb, po, ram, ssd
     print('\n')
