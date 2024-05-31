@@ -43,7 +43,7 @@ def fitness(individual, target):
     # 차이가 0에 가까울수록 적응도가 높아야 하므로, 차이의 역수를 반환
     # 차이가 0일 경우를 대비해 1을 더해 분모가 0이 되는 것을 방지
 
-    #cpu, gpu, mb, po, ram, ssd
+    #cpu, gpu, mb, po, ram, ssd의 각 적합도 함수 값을 스케일링 해줌 
     cpuFit = ( 1 / (abs( CPU_SCORE - CPU[individual[0]][1]) +1) * WE['cpu'] )
     gpuFit = ( 1 / (abs( GPU_SCORE - GPU[individual[1]][2]) +1) * WE['gpu'] )
     mbFit = ( 1 / (abs( MB_SCORE - MB[individual[2]][0]) + 1) * WE['mb'] )
@@ -57,16 +57,17 @@ def fitness(individual, target):
 
     standardozed_DIFF = [abs(i - mean_DIFF) / (std_DIFF + 1e-5) for i in DIFF_ALL]
 
-    #print(f'standardozed_DIFF = {standardozed_DIFF}')
+    return sum(standardozed_DIFF) # 모든 비용함수
+    #return priceFit # 가격만 비교
 
+
+    ##가중치 확인 코드
+    #print(f'standardozed_DIFF = {standardozed_DIFF}')
     #print(f'price = {priceFit} cpuFit = {cpuFit}, gpuFit ={gpuFit}, mbFit = {mbFit}, poFit ={poFit}, ramFit ={ramFit}, ssdFit ={ssdFit} ')
     #(difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) 
     #print(f' FIT = {( difference + cpuFit + gpuFit + mbFit + poFit + ramFit + ssdFit) }')
-
-
-    return sum(standardozed_DIFF) # 모든 비용함수
-    #return priceFit # 가격만 비교
 ##-----> 
+
 
 
 def cpuToMotherBoard( individual ):
@@ -179,8 +180,6 @@ for i in SSD:
     i[5] = float(i[5])
     i[6] = float(i[6])
 
-
-
 cpu_list = { i for i in range(len(CPU))}  
 gpu_list = { i for i in range(len(GPU))}  
 mb_list = { i for i in range(len(MB))}  
@@ -203,29 +202,28 @@ items = [
 
 # 유전 알고리즘 실행
 def run_ga(items, target_price, population_size=100, generations=50):
-    population = init_population(items, population_size)
+    population = init_population(items, population_size) # 초기 개체
 
     #for i in range(len(population)):
-    #   print(f'{i+1}번째 sample = {population[i]}')
+    #    print(f'{i+1}번째 sample = {population[i]}')
 
-    for generation in range(generations):
-        fitnesses = evaluate_population(population, target_price)
+    for generation in range(generations): # 반복횟수 50번  선택, 교차, 돌연변이 반복 최대 적합도 기준
+        fitnesses = evaluate_population(population, target_price) 
         
-        ##if generation == 0 :
-        ##    for i in range(len(fitnesses)):
-        ##        print(f'{i}번째 fitness = {fitnesses[i]}')
-        
-
         new_population = []
-        for _ in range(population_size // 2):
+        for j in range(population_size // 2):
             parent1 = select(population, fitnesses)
             parent2 = select(population, fitnesses)
             child1, child2 = crossover(parent1, parent2)
-            #if generation == 0:
-                #print(f'{i+1}번째 child1 = {child1}, child2 = {child2}')
+
+
             mutate(child1)
             mutate(child2)
             new_population.extend([child1, child2])
+            best_fitness = max(fitnesses)
+            best_index = fitnesses.index(best_fitness)
+            best_individual = population[best_index]
+
         population = new_population
     # 가장 적합한 개체 찾기
     best_fitness = max(fitnesses)
@@ -237,9 +235,7 @@ def run_ga(items, target_price, population_size=100, generations=50):
 
 
 # 사용자로부터 목표 가격 입력 받기
-target_price = int(input("목표 가격을 입력하세요: (원)"))
-
-
+target_price = int(input("목표 가격을 입력하세요(원): "))
 # 유전 알고리즘 실행하여 최적의 구성 찾기
 best_configuration, best_fitness = run_ga( items, target_price, population_size=100, generations=50 )
 
